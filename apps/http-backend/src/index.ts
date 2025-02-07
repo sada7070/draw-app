@@ -4,6 +4,8 @@ import jwt from "jsonwebtoken"
 import brcypt from "bcrypt"
 import { prismaClient } from "@repo/db/prismaClient";
 import { signUpSchema, signInSchema, CreateRoomSchema } from "@repo/common/zod"
+import { userMiddleware } from './middleware';
+import AuthenticatedRequest from './middleware';
 
 const app =  express();
 app.use(express.json());
@@ -71,7 +73,7 @@ app.post("/signin", async (req, res) => {
         return;
     }
 
-    // comparing password wiht hashed password
+    // comparing entered password with hashed password
     const matchedPassword = await brcypt.compare(parsedData.data.password, user.password);
 
     if(matchedPassword) {
@@ -88,6 +90,37 @@ app.post("/signin", async (req, res) => {
             messaage: "Incorrect password."
         })
         return;
+    }
+})
+
+app.post("/room", userMiddleware, async(req: AuthenticatedRequest, res) => {
+    const parsedData = CreateRoomSchema.safeParse(req.body);
+
+    if(!parsedData.success) {
+        res.status(411).json({
+            message: "Invalid input."
+        })
+        return;
+    }
+
+    const userId = req.userId;
+
+    try{
+        const room = await prismaClient.room.create({
+            data: {
+                slug: parsedData.data.roomName,
+                adminId: userId!
+            }
+        })
+    
+        res.status(200).json({
+            roomId: room.id,
+            message: "Room created succussfully."
+        })
+    } catch {
+        res.status(409).json({
+            message: "Room name already exists."
+        })
     }
 })
 
