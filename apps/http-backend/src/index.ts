@@ -37,13 +37,57 @@ app.post("/signup", async(req, res) => {
         }, process.env.JWT_SECRET!);
 
         res.status(200).json({
-            message: "Account created succussfully.",
+            message: "Signup succussful.",
             token: token
         })
     } catch {
         res.status(409).json({
             message: "Email already exist."
         })
+    }
+})
+
+app.post("/signin", async (req, res) => {
+    const parsedData = signInSchema.safeParse(req.body);
+
+    if(!parsedData.success) {
+        res.status(411).json({
+            message: "Incorrect credentials."
+        })
+        return;
+    }
+
+    // finding user in db
+    const user = await prismaClient.user.findFirst({
+        where: {
+            email: parsedData.data.email
+        }
+    })
+
+    if(!user) {
+        res.status(401).json({
+            message: "Incorrect email."
+        })
+        return;
+    }
+
+    // comparing password wiht hashed password
+    const matchedPassword = await brcypt.compare(parsedData.data.password, user.password);
+
+    if(matchedPassword) {
+        const token = jwt.sign({
+            userId: user.id
+        }, process.env.JWT_SECRET!);
+    
+        res.status(200).json({
+            message: "Signin succussful.",
+            token: token
+        })
+    } else {             
+        res.status(401).json({
+            messaage: "Incorrect password."
+        })
+        return;
     }
 })
 
