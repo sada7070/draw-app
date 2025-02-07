@@ -1,4 +1,6 @@
-import express from "express";
+import 'dotenv/config'
+import express from "express"
+import { prismaClient } from "@repo/db/prismaClient";
 import { signUpSchema, signInSchema, CreateRoomSchema } from "@repo/common/zod"
 
 const app =  express();
@@ -15,6 +17,10 @@ app.get("/signup", (req, res) => {
         });
         return;
     }
+
+    // prismaClient.user.create({
+
+    // })
 })
 
 app.listen(3001);
