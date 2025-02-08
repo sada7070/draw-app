@@ -93,6 +93,7 @@ app.post("/signin", async (req, res) => {
     }
 })
 
+// to create new room
 app.post("/room", userMiddleware, async(req: AuthenticatedRequest, res) => {
     const parsedData = CreateRoomSchema.safeParse(req.body);
 
@@ -122,6 +123,41 @@ app.post("/room", userMiddleware, async(req: AuthenticatedRequest, res) => {
             message: "Room name already exists."
         })
     }
+})
+
+// to get previous messages of the room.
+app.get("/chats/:roomId",userMiddleware, async (req: AuthenticatedRequest, res) =>{
+    const userId = req.userId
+    const roomId = Number(req.params.roomId);
+
+    // checking whether the user is a member of the room which he is getting access to see messages.
+    const userInRoom = await prismaClient.chat.findFirst({
+        where:  {
+            roomId,
+            userId
+        }
+    });
+    // if not the member of the room then,
+    if(!userInRoom) {
+        res.status(403).json({
+            messaage: "Access denied. You are not a member of this room."
+        })
+        return;
+    }
+
+    // if thee user is valid.
+    const messaages = await prismaClient.chat.findMany({
+        where: {
+            roomId
+        },
+        orderBy: {
+            id: "desc"                  // order in form of latest messages.
+        },
+        take: 50                        // get only last 50 messages.
+    });
+    res.json({
+        messaages
+    })
 })
 
 app.listen(3001);
