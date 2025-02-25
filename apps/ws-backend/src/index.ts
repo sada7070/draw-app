@@ -35,7 +35,7 @@ wss.on("connection", function connection(ws, request) {
     if(!url) {
         return;
     }
-    // to get url from the original url
+    // to get url from the original page url
     const queryParams = new URLSearchParams(url.split('?')[1]);
     const token = queryParams.get('token') || ""
     const userId = checkUser(token);
